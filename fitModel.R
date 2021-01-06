@@ -54,7 +54,7 @@ fitModels2Data <- function(args) {
 
 ####################################################
 
-archivo <- "./Data/humans_tolerance3.csv"
+archivo <- "./Data/humans_tolerance0.csv"
 print(paste("Loading and preparing data", archivo, "..."))
 df = read.csv(archivo)
 
@@ -68,9 +68,17 @@ args <- get_FRASims_list(args)
 print(head(args))
 print("Data prepared!")
 
+print("Fitting MBiases...")
+f_MBiases <- searchBestFit_MBiases(args, N=2, module="nmkb", contador, FALSE)
+print(f_MBiases)
+
 print("Fitting WSLS...")
-f_WSLS <- searchBestFit_WSLS(args, N=1, module="nmkb", contador, FALSE)
+f_WSLS <- searchBestFit_WSLS(args, N=2, module="nmkb", contador, FALSE)
 print(f_WSLS)
+
+print("Fitting FRA...")
+f_FRA <- searchBestFit_FRA(args, N=2, module="nmkb", contador, FALSE)
+print(f_FRA)
 
 fitdata <- fitModels2Data(args)
 write.csv(fitdata, './Data/parameter_fit_humans.csv', row.names=FALSE)

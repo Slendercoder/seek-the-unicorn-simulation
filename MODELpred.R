@@ -32,8 +32,8 @@ regionsCoded <- c('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345678
 lowerEps2=.0001
 highEps2 =.9999
 
-lower_limits=c(0,0,0,0,0,999,0,0,999,0.5)
-upper_limits=c(0.25,0.25,0.25,0.25,500,1000,32,500,1000,1)
+lower_limits=c(0,0,0,0,0,29,0,0,29,0.5)
+upper_limits=c(0.25,0.25,0.25,0.25,500,30,32,500,30,1)
 
 ###########################
 # Define functions
@@ -644,9 +644,6 @@ FRApred1 <- function(i, iV, s, j, FRASims, theta) {
     aux <- aux/sum(aux)
   }
   bias <- c(1 - sum(aux), aux)
-#  h <- 70 # Shaky hand parameter p = 0.81
-  h <- 16 # Shaky hand parameter p = 0.95
-  bias[1] <- bias[1]+ h
   # print('bias')
   # imprimir(bias)
   
@@ -669,6 +666,13 @@ FRApred1 <- function(i, iV, s, j, FRASims, theta) {
   # imprimir(attractiveness)
   
   probs <- attractiveness / sum(attractiveness)
+
+  # Including shaky hand
+  shaky <- 0.88
+  probs[2:9] <- probs[2:9]*shaky
+  probs[1] <- 1 - shaky + shaky*probs[1] 
+  
+  # Keeping probabilities within range
   probs <- replace(probs,probs<lowerEps2,lowerEps2)
   probs <- replace(probs,probs>highEps2,highEps2)
   
@@ -1073,9 +1077,6 @@ WSLSpred <- function(i, s, theta){
     aux <- aux/sum(aux)
   }
   bias <- c(1 - sum(aux), aux)
-#  h <- 15 # Shaky hand parameter p = 0.81
-  h <- 5 # Shaky hand parameter p = 0.95
-  bias[1] <- bias[1] + h
   # print("bias")
   # imprimir(bias)
   
@@ -1089,6 +1090,13 @@ WSLSpred <- function(i, s, theta){
   }
   
   probs <- attractiveness / sum(attractiveness)
+
+  # Including shaky hand
+  shaky <- 0.88
+  probs[2:9] <- probs[2:9]*shaky
+  probs[1] <- 1 - shaky + shaky*probs[1] 
+
+  # Keeping probabilities within range
   probs <- replace(probs,probs<lowerEps2,lowerEps2)
   probs <- replace(probs,probs>highEps2,highEps2)
   

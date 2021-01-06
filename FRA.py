@@ -106,11 +106,9 @@ def numberRegion(r):
 def lettercode2Strategy(coded, Num_Loc):
 
 	letras = list('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789;:')
-
 	v = []
 	for c in coded:
 		v.append(letras.index(c))
-
 	return v
 
 def code2Vector(strategy, Num_Loc):
@@ -120,6 +118,11 @@ def code2Vector(strategy, Num_Loc):
         if i in strategy:
             v[i] = 1
     return v
+
+def region(r):
+    r = lettercode2Strategy(r,8)
+    r = code2Vector(r,8)
+    return r
 
 def create_regions_and_strategies(Num_Loc):
 	size = int(Num_Loc * Num_Loc)
@@ -435,11 +438,10 @@ def minDistComp2Focal(r, complements):
 	distances = distances[1:]
 	return min(distances)
 
-def classify_region(r, regionsCoded, TOLERANCIA):
+def classify_region(r, TOLERANCIA):
 	# Returns name of closest region
 	# Input: r, which is a region coded as a vector of 0s and 1s of length 64
-	# Output: name of region
-	distances = [dist(list(r), k) for k in regionsCoded]
+	distances = [dist(list(r), region(k)) for k in regionsCoded]
 	valor = np.min(distances)
 	indiceMin = np.argmin(distances)
 	if valor < TOLERANCIA:

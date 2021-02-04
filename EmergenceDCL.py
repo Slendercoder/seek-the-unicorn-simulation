@@ -11,6 +11,7 @@ import pandas as pd
 # import matplotlib.pyplot as plt
 # import matplotlib.patches as patches
 import FRA
+import os
 
 DEB = False
 IMPR = False
@@ -25,7 +26,7 @@ TOLERANCIA = 1
 ################################
 
 # Define players
-class player(object):
+class player :
 	'''Object defining a player.'''
 
 	def __init__(self, Ready, Decision, Choice, Where, Joint, Score, Accuracy, Name, modelParameters):
@@ -38,15 +39,6 @@ class player(object):
 		self.accuracy = Accuracy
 		self.name = Name
 		self.parameters = modelParameters
-		self.regionsCoded = ['abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789;:', # ALL
-		                  '', # NOTHING
-		                  'GHIJKLMNOPQRSTUVWXYZ0123456789;:', # BOTTOM
-		                  'abcdefghijklmnopqrstuvwxyzABCDEF', # TOP
-		                  'abcdijklqrstyzABGHIJOPQRWXYZ4567', # LEFT
-		                  'efghmnopuvwxCDEFKLMNSTUV012389;:', # RIGHT
-		                  'jklmnorstuvwzABCDEHIJKLMPQRSTUXYZ012', # IN
-		                  'abcdefghipqxyFGNOVW3456789;:' # OUT
-		                  ]
 		self.regionsNames = ['RS', \
 		           'ALL', \
 		           'NOTHING', \
@@ -56,6 +48,15 @@ class player(object):
 		           'RIGHT', \
 		           'IN', \
 		           'OUT']
+		self.regionsCoded = ['abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789;:', # ALL
+		                  '', # NOTHING
+		                  'GHIJKLMNOPQRSTUVWXYZ0123456789;:', # BOTTOM
+		                  'abcdefghijklmnopqrstuvwxyzABCDEF', # TOP
+		                  'abcdijklqrstyzABGHIJOPQRWXYZ4567', # LEFT
+		                  'efghmnopuvwxCDEFKLMNSTUV012389;:', # RIGHT
+		                  'jklmnorstuvwzABCDEHIJKLMPQRSTUXYZ012', # IN
+		                  'abcdefghipqxyFGNOVW3456789;:' # OUT
+		                  ]
 		self.strategies = [FRA.lettercode2Strategy(x, 8) for x in self.regionsCoded]
 		self.regions = [FRA.code2Vector(x, 8) for x in self.strategies]
 		self.complements = [[1 - x for x in sublist] for sublist in self.regions]
@@ -64,7 +65,8 @@ class player(object):
 		attractiveness = self.attract()
 		sum = np.sum(attractiveness)
 		probabilities = [x/sum for x in attractiveness]
-		newChoice = choices(range(9), weights=probabilities)[0]
+		# newChoice = choices(range(9), weights=probabilities)[0]
+		newChoice = np.random.choice(range(9), p=probabilities)
 		self.choice = newChoice
 
 	def attract(self, DEB=False):
@@ -96,7 +98,7 @@ class player(object):
 
 		# Adding 'Win Stay'
 		if self.choice != 0:
-			attractiveness[i] += alpha * FRA.sigmoid(self.score, beta, gamma)
+			attractiveness[self.choice] += alpha * FRA.sigmoid(self.score, beta, gamma)
 
 		if DEB:
 			attactPrint = ["%.3f" % v for v in attractiveness]
@@ -118,14 +120,14 @@ class player(object):
 		return attractiveness
 
 # Define Experiment Object
-class Experiment(object):
+class Experiment :
 	'''Object defining the experiment and simulation'''
 
-	def __init__(self, gameParameters, modelParameters):
+	def __init__(self, gameParameters, modelParameters, shaky_hand=0):
 		assert(len(gameParameters) == 5), "Game parameters incorrect length!"
 		self.gameParameters = gameParameters
 		self.modelParameters = modelParameters
-		self.shaky_hand = 0
+		self.shaky_hand = shaky_hand
 		# Create data frame
 		cols = ['Dyad', 'Round', 'Player', 'Answer', 'Time']
 		cols += ['a' + str(i+1) + str(j+1) for i in range(0, 8) for j in range(0, 8)]
@@ -159,7 +161,6 @@ class Experiment(object):
 				pl.decision = ""
 				pl.where = []
 				pl.joint = []
-				pl.choice = 0
 				pl.ready = False
 				pl.score = 0
 				pl.accuracy = False
@@ -173,7 +174,21 @@ class Experiment(object):
 				place = int(floor(uniform(0, Num_Loc * Num_Loc - 1)))
 				Board[place] = 1
 
-			# Start searchging for the unicorn
+			# Determine players' chosen region
+			estrat = []
+			for k in range(0, Pl):
+				chosen = Players[k].choice
+				if chosen == 0:
+				    n = randint(2, Num_Loc * Num_Loc - 2)
+				    estrat.append(list(np.random.choice(Num_Loc * Num_Loc, n, replace=False)))
+				else:
+					estrat.append(Players[k].strategies[chosen - 1])
+				estrat[k] = self.shake(estrat[k])
+				# print(f"Player's {k} chosen region ({chosen}):")
+				# print(estrat[k])
+				# FRA.imprime_region(FRA.code2Vector(estrat[k], Num_Loc))
+
+			# Start searching for the unicorn
 			for j in range(0, Num_Loc * Num_Loc + 1):
 				# print("\nRunning iteration " + str(j))
 				for k in range(0, Pl):
@@ -188,17 +203,11 @@ class Experiment(object):
 					elif not Players[k].ready:
 						# ...look at the location determined by the strategy
 		#				print("Player " + str(k) + " is using strategy: " + \
-		#					str(Players[k].strategy))
+		#					FRA.nameRegion(Players[k].choice))
 		#				print("He is looking at location: " + str(strategies[Players[k].strategy]))
 						# See if the strategy is not over...
-						chosen = Players[k].choice
-						if chosen == 0:
-						    n = randint(2,Num_Loc * Num_Loc - 2)
-						    estrat = list(np.random.choice(Num_Loc * Num_Loc, n))
-						else:
-							estrat = Players[k].strategies[chosen - 1]
-						if j<len(estrat):
-							search_place = estrat[j]
+						if j<len(estrat[k]):
+							search_place = estrat[k][j]
 							Players[k].where.append(search_place)
 							# print("Player " + str(k) + " is searching at " + str(search_place))
 							if Board[search_place] == 1:
@@ -307,57 +316,52 @@ class Experiment(object):
 
 				# Player determines its next strategy
 				Players[k].joint = both
-				Players[k].make_decision()
 
 			if DEB:
 				Is_there = " Absent" if place == -1 else " Present"
+				titulo = "Round: " + str(i) + " (" + Is_there + ") Scores: (" + str(Players[0].score) + "," + str(Players[1].score)
+				FRA.dibuja_ronda(Players[0], Players[1], titulo)
+
+			for k in range(0, Pl):
+				Players[k].make_decision()
+
+			if DEB:
 				print('-----------------')
 				print('Unicorn ' + Is_there)
+				# print('Region player 0:')
+				# FRA.imprime_region(FRA.code2Vector(Players[0].where, Num_Loc))
+				# print('Region player 1:')
+				# FRA.imprime_region(FRA.code2Vector(Players[1].where, Num_Loc))
 				print('both', len(both))
-				print('scores: p0: ', sc[0], ' p1: ', sc[1])
-				# print('Player 0 from region ', FRA.nameRegion(a[0]), 'to region ', FRA.nameRegion(Players[0].strategy))
-				# print('Player 1 from region ', FRA.nameRegion(a[1]), 'to region ', FRA.nameRegion(Players[1].strategy))
+				print('scores: p0: ', Players[0].score, ' p1: ', Players[1].score)
+				print('Player 0 to region ', FRA.nameRegion(Players[0].choice))
+				print('Player 1 to region ', FRA.nameRegion(Players[1].choice))
 				print('End summary round ', i)
 				print('-----------------')
-				FRA.dibuja_ronda(FRA.code2Vector(Players[0].where, Num_Loc), sc[0], FRA.code2Vector(Players[1].where, Num_Loc), sc[1], Num_Loc,self. modelParameters, self.regions, "Scores: (" + str(sc[0]) + "," + str(sc[1]) + ") Round: " + str(i) + "(" + Is_there + ")")
 
+	def shake(self, strategy):
+		if uniform(0, 1) > self.shaky_hand:
+			p = 2
+			outs = np.random.choice(strategy, p) if len(strategy) > 0 else []
+			complement = [i for i in range(64) if i not in strategy]
+			ins = np.random.choice(complement, p) if len(complement) > 0 else []
+			return [i for i in strategy if i not in outs] + list(ins)
+		else:
+			return strategy
 
 	def run_simulation(self):
-
 		IT = self.gameParameters[4] # number of experiments in a set
-
 		for h in range(0, IT):
 			print("****************************")
 			print("Running dyad no. ", h + 1)
 			print("****************************\n")
 			self.run_dyad()
 
-	def run_simulation_arthur(self, attraction=1, win_stay=1, stubbornness=1, repulsion=1):
-
-		IT = self.gameParameters[4] # number of experiments in a set
-
-		for k in range(self.gameParameters[1]):
-			# Determining if player k follows attraction heuristic
-			if uniform(0,1) < attraction:
-				pass
-			else:
-				self.modelParameters[:4 + k * (13)] = [0] * 4
-
-			# Determining if player k follows win_stay heuristic
-			if uniform(0,1) < attraction:
-				self.modelParameters[4 + k * (13):7 + k * (13)] = [100, 100, 31]
-			else:
-				self.modelParameters[4 + k * (13):7 + k * (13)] = [0] * 4
-
-			# Determining if player k follows stubbornness heuristic
-			if uniform(0,1) < attraction:
-				self.modelParameters[7 + k * (13):10 + k * (13)] = [100, 100, 31]
-			else:
-				self.modelParameters[7 + k * (13):10 + k * (13)] = [0] * 4
-
-		for h in range(0, IT):
-			print("****************************")
-			print("Running dyad no. ", h + 1)
-			print("****************************\n")
-
-			self.run_dyad()
+	def save(self, archivo_raiz='./Data/output'):
+		count = 0
+		archivo = archivo_raiz + str(count) + '.csv'
+		while os.path.isfile(archivo):
+			count += 1
+			archivo = archivo_raiz + str(count) + '.csv'
+		self.df.to_csv(archivo, index=False)
+		print('Data saved to' + archivo)

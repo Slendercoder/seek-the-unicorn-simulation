@@ -282,10 +282,83 @@ def dibuja_regiones(reg1, reg2, Num_Loc, titulo):
 	fig4.suptitle(titulo)
 	plt.show()
 
-def dibuja_ronda(reg1, sco1, reg2, sco2, Num_Loc, modelParameters, focals, titulo):
+# def dibuja_ronda(reg1, sco1, reg2, sco2, Num_Loc, modelParameters, focals, titulo):
+#
+#     assert(len(reg1) == Num_Loc * Num_Loc), "Incorrect region size 1!"
+#     assert(len(reg2) == Num_Loc * Num_Loc), "Incorrect region size 2!"
+#
+#     # Initializing Plot
+#     fig = plt.figure()
+#     spec = gridspec.GridSpec(ncols=2, nrows=2)#, height_ratios=[3, 1, 1, 1])
+#     fig.subplots_adjust(left=0.1, bottom=0.05, right=0.9, top=0.95, wspace=0.1, hspace=0.2)
+#
+#     ax0 = fig.add_subplot(spec[0,0])
+#     ax1 = fig.add_subplot(spec[0,1])
+#     ax2 = fig.add_subplot(spec[1,0])
+#     ax3 = fig.add_subplot(spec[1,1])
+#
+#     ax0.set_title('Player 1')
+#     ax1.set_title('Player 2')
+#     ax0.get_xaxis().set_visible(False)
+#     ax1.get_xaxis().set_visible(False)
+#     ax0.get_yaxis().set_visible(False)
+#     ax1.get_yaxis().set_visible(False)
+#     ax2.set_yticklabels([])
+#     ax2.set_ylabel('Number of \n different tiles', fontsize=8)
+#     # ax2.set_ylabel('Attracted\n to', fontsize=8)
+#     ax3.yaxis.tick_right()
+#     # ax2.get_xaxis().set_visible(False)
+#     # ax3.get_xaxis().set_visible(False)
+#
+#     # Ploting regions
+#     step = 1. / Num_Loc
+#     tangulos1 = []
+#     tangulos2 = []
+#     for j in range(0, Num_Loc * Num_Loc):
+#         x = int(j) % Num_Loc
+#         y = (int(j) - x) / Num_Loc
+#         by_x = x * step
+#         by_y = 1 - (y + 1) * step
+#         if reg1[j] == 1:
+#             tangulos1.append(patches.Rectangle(*[(by_x, by_y), step, step],\
+# 			facecolor="black", alpha=1))
+#         if reg2[j] == 1:
+#             tangulos2.append(patches.Rectangle(*[(by_x, by_y), step, step],\
+# 			facecolor="black", alpha=1))
+#         if reg1[j] == 1 and reg2[j] == 1:
+#             tangulos1.append(patches.Rectangle(*[(by_x, by_y), step, step],\
+# 			facecolor="red", alpha=1))
+#             tangulos2.append(patches.Rectangle(*[(by_x, by_y), step, step],\
+# 			facecolor="red", alpha=1))
+#
+#     for t in tangulos1:
+#         ax0.add_patch(t)
+#
+#     for t in tangulos2:
+#         ax1.add_patch(t)
+#
+#     # Plot attractiveness
+#     # regions_names = ['RS','A','N','B','T','L','R','I','O']
+#     regions_names = ['A','N','B','T','L','R','I','O']
+#     overlap = np.multiply(reg1, reg2).tolist()
+#     # frasPL1 = attractiveness(reg1, sco1, overlap, 0, modelParameters, Num_Loc, focals)
+#     # frasPL2 = attractiveness(reg2, sco2, overlap, 1, modelParameters, Num_Loc, focals)
+#     frasPL1 = [dist(reg1, k) for k in focals]
+#     frasPL2 = [dist(reg2, k) for k in focals]
+#     ax2.set_ylim(0,max(1,max(frasPL1)))
+#     ax3.set_ylim(0,max(1,max(frasPL1)))
+#     ax2.bar(regions_names, frasPL1)
+#     ax3.bar(regions_names, frasPL2)
+#
+#     # threshold = frasPL1[0]
+#     threshold = 20
+#     ax2.axhline(y=threshold, linewidth=1, color='k')
+#     ax3.axhline(y=threshold, linewidth=1, color='k')
+#
+#     fig.suptitle(titulo)
+#     plt.show()
 
-    assert(len(reg1) == Num_Loc * Num_Loc), "Incorrect region size 1!"
-    assert(len(reg2) == Num_Loc * Num_Loc), "Incorrect region size 2!"
+def dibuja_ronda(player1, player2, titulo):
 
     # Initializing Plot
     fig = plt.figure()
@@ -298,19 +371,19 @@ def dibuja_ronda(reg1, sco1, reg2, sco2, Num_Loc, modelParameters, focals, titul
     ax3 = fig.add_subplot(spec[1,1])
 
     ax0.set_title('Player 1')
-    ax1.set_title('Player 2')
     ax0.get_xaxis().set_visible(False)
-    ax1.get_xaxis().set_visible(False)
     ax0.get_yaxis().set_visible(False)
+    ax1.set_title('Player 2')
+    ax1.get_xaxis().set_visible(False)
     ax1.get_yaxis().set_visible(False)
     ax2.set_yticklabels([])
-    ax2.set_ylabel('Number of \n different tiles', fontsize=8)
-    # ax2.set_ylabel('Attracted\n to', fontsize=8)
+    ax2.set_ylabel('Probabilities', fontsize=8)
     ax3.yaxis.tick_right()
-    # ax2.get_xaxis().set_visible(False)
-    # ax3.get_xaxis().set_visible(False)
 
     # Ploting regions
+    Num_Loc = 8
+    reg1 = code2Vector(player1.where, Num_Loc)
+    reg2 = code2Vector(player2.where, Num_Loc)
     step = 1. / Num_Loc
     tangulos1 = []
     tangulos2 = []
@@ -337,22 +410,23 @@ def dibuja_ronda(reg1, sco1, reg2, sco2, Num_Loc, modelParameters, focals, titul
     for t in tangulos2:
         ax1.add_patch(t)
 
-    # Plot attractiveness
-    # regions_names = ['RS','A','N','B','T','L','R','I','O']
-    regions_names = ['A','N','B','T','L','R','I','O']
-    overlap = np.multiply(reg1, reg2).tolist()
-    # frasPL1 = attractiveness(reg1, sco1, overlap, 0, modelParameters, Num_Loc, focals)
-    # frasPL2 = attractiveness(reg2, sco2, overlap, 1, modelParameters, Num_Loc, focals)
-    frasPL1 = [dist(reg1, k) for k in focals]
-    frasPL2 = [dist(reg2, k) for k in focals]
+    # Find probabilities
+    attractiveness = player1.attract()
+    sum = np.sum(attractiveness)
+    frasPL1 = [x/sum for x in attractiveness]
+    attractiveness = player2.attract()
+    sum = np.sum(attractiveness)
+    frasPL2 = [x/sum for x in attractiveness]
+
+    # Plot probabilities
+    regions_names = ['RS','A','N','B','T','L','R','I','O']
     ax2.set_ylim(0,max(1,max(frasPL1)))
     ax3.set_ylim(0,max(1,max(frasPL1)))
     ax2.bar(regions_names, frasPL1)
     ax3.bar(regions_names, frasPL2)
-
-    # threshold = frasPL1[0]
-    threshold = 20
+    threshold = frasPL1[0]
     ax2.axhline(y=threshold, linewidth=1, color='k')
+    threshold = frasPL2[0]
     ax3.axhline(y=threshold, linewidth=1, color='k')
 
     fig.suptitle(titulo)
@@ -444,7 +518,7 @@ def classify_region(r, TOLERANCIA):
 	distances = [dist(list(r), region(k)) for k in regionsCoded]
 	valor = np.min(distances)
 	indiceMin = np.argmin(distances)
-	if valor < TOLERANCIA:
+	if valor <= TOLERANCIA:
 		return(nameRegion(indiceMin + 1))
 	else:
 		return('RS')
